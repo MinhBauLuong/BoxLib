@@ -211,12 +211,12 @@ DistributionMapping::Sort (std::vector<LIpair>& vec,
 {
     if (vec.size() > 1)
     {
-        std::stable_sort(vec.begin(), vec.end(), LIpairComp());
-
-        if (reverse)
-        {
-            std::reverse(vec.begin(), vec.end());
-        }
+	if (reverse) {
+	    std::stable_sort(vec.begin(), vec.end(), LIpairGT());
+	}
+	else {
+	    std::stable_sort(vec.begin(), vec.end(), LIpairLT());
+	}
     }
 }
 
@@ -230,10 +230,11 @@ DistributionMapping::LeastUsedCPUs (int         nprocs,
     BL_PROFILE("DistributionMapping::LeastUsedCPUs()");
 
     Array<long> bytes(nprocs);
+    long thisbyte = BoxLib::total_bytes_allocated_in_fabs/1024;
 
     BL_COMM_PROFILE(Profiler::Allgather, sizeof(long), Profiler::BeforeCall(),
                     Profiler::NoTag());
-    MPI_Allgather(&BoxLib::total_bytes_allocated_in_fabs,
+    MPI_Allgather(&thisbyte,
                   1,
                   ParallelDescriptor::Mpi_typemap<long>::type(),
                   bytes.dataPtr(),
@@ -324,17 +325,11 @@ DistributionMapping::DistributionMapping (const Array<int>& pmap, bool put_in_ca
         // We want to save this pmap in the cache.
         // It's an error if a pmap of this length has already been cached.
         //
-        for (std::map< int,LnClassPtr<Ref> >::const_iterator it = m_Cache.begin();
-             it != m_Cache.end();
-             ++it)
-        {
-            if (it->first == m_ref->m_pmap.size())
-            {
-                BoxLib::Abort("DistributionMapping::DistributionMapping: pmap of given length already exists");
-            }
-        }
-
-        m_Cache.insert(std::make_pair(m_ref->m_pmap.size(),m_ref));
+	std::pair<std::map< int,LnClassPtr<Ref> >::iterator, bool> r;
+	r = m_Cache.insert(std::make_pair(m_ref->m_pmap.size(),m_ref));
+	if (r.second == false) {
+	    BoxLib::Abort("DistributionMapping::DistributionMapping: pmap of given length already exists");
+	}
     }
 }
 

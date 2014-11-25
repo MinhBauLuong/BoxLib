@@ -6,6 +6,7 @@
 #include <cmath>
 #include <cstdlib>
 #include <algorithm>
+#include <limits>
 
 #include <BLassert.H>
 #include <Box.H>
@@ -1089,6 +1090,7 @@ BaseFab<T>::define ()
     BL_ASSERT(nvar > 0);
     BL_ASSERT(dptr == 0);
     BL_ASSERT(numpts > 0);
+    BL_ASSERT(std::numeric_limits<long>::max()/nvar > numpts);
 
     truesize = nvar*numpts;
     dptr     = static_cast<T*>(BoxLib::The_Arena()->alloc(truesize*sizeof(T)));
