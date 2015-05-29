@@ -6,6 +6,9 @@ BOXLIB_HOME ?= ../../
 #    then the line below will be ignored
 HYPRE_DIR ?= $(HOME)/lib/hypre
 
+# location of finite-volume HPGMG, if you decide to use it
+HPGMG_DIR ?= $(HOME)/hpgmg/finite-volume
+
 # If you try to build with USE_MPI = TRUE and the make system can not find your mpi files, it may be because
 #    MPI_HOME is not already defined on your machine.  In that case, you may need to set
 #    the following variables according to the path of MPI on your particular machine.  
@@ -19,21 +22,26 @@ HYPRE_DIR ?= $(HOME)/lib/hypre
 PRECISION = DOUBLE
 
 DEBUG	= TRUE
-DEBUG	= FALSE
 
 DIM	= 3
 
-COMP =gcc
-FCOMP=gfortran
+COMP = gcc
+FCOMP = gfortran
 
 USE_HYPRE = FALSE
-USE_F90_SOLVERS = TRUE
+USE_F90_SOLVERS = FALSE
+
+USE_HPGMG = TRUE
+HPGMG_FCYCLES = TRUE
+HPGMG_UNLIMIT_POST_F_VCYCLES = TRUE
+HPGMG_HELMHOLTZ = TRUE
 
 # Make BoxLib_C bottom CG solver use the old convergence criteria for comparison with BoxLib_F
 CPPFLAGS += -DCG_USE_OLD_CONVERGENCE_CRITERIA
 
 # USE_MPI must be TRUE if USE_HYPRE
 USE_MPI=TRUE
+USE_OMP=TRUE
 
 EBASE = main
 
@@ -89,6 +97,23 @@ ifeq ($(USE_HYPRE), TRUE)
   LIBRARIES += -lHYPRE
 
   DEFINES += -DUSEHYPRE
+endif
+
+ifeq ($(USE_HPGMG), TRUE)
+  include $(HPGMG_DIR)/source/Make.package
+#  DEFINES += -DUSEHPGMG -DUSE_BICGSTAB=1 -DUSE_SUBCOMM=1 -DUSE_CHEBY=1 -DUSE_MPI=1
+  DEFINES += -DUSEHPGMG -DUSE_BICGSTAB=1 -DUSE_SUBCOMM=1 -DUSE_GSRB=1 -DUSE_MPI=1
+  ifeq ($(HPGMG_FCYCLES), TRUE)
+    DEFINES += -DUSE_FCYCLES
+    ifeq ($(HPGMG_UNLIMIT_POST_F_VCYCLES), TRUE)
+      DEFINES += -DUNLIMIT_FMG_VCYCLES=1
+    endif
+  endif
+  ifeq ($(HPGMG_HELMHOLTZ), TRUE)
+    DEFINES += -DUSE_HELMHOLTZ
+  endif
+  INCLUDE_LOCATIONS += $(HPGMG_DIR)/source
+  vpathdir          += $(HPGMG_DIR)/source
 endif
 
 vpath %.c   : . $(vpathdir)

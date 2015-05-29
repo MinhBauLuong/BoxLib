@@ -5,3 +5,10 @@ CEXE_headers += writePlotFile.H
 
 CEXE_sources += main.cpp
 CEXE_sources += writePlotFile.cpp
+CEXE_sources += setup_rhs.cpp
+CEXE_sources += set_boundary.cpp
+CEXE_sources += setup_coeffs.cpp
+CEXE_sources += compute_analyticSolution.cpp
+CEXE_sources += solve.cpp
+CEXE_sources += solve_with_Cpp.cpp
+CEXE_sources += solve_with_F90.cpp

@@ -122,6 +122,8 @@ c-----------------------------------------------------------------------
       double precision coef(c_l1:c_h1, c_l2:c_h2, c_l3:c_h3)
  
       integer i,j,k
+
+c     print *, lo(3), hi(3), lo(2), hi(2), lo(1), hi(1)
  
       if (dir .eq. 0) then 
         do k = lo(3), hi(3)
