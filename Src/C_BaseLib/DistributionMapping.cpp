@@ -101,6 +101,9 @@ DistributionMapping::strategy (DistributionMapping::Strategy how)
     case RRSFC:
         m_BuildMap = &DistributionMapping::RRSFCProcessorMap;
         break;
+    case BISECTION:
+        m_BuildMap = &DistributionMapping::BisectionProcessorMap;
+        break;
     default:
         BoxLib::Error("Bad DistributionMapping::Strategy");
     }
@@ -172,6 +175,10 @@ DistributionMapping::Initialize ()
         else if (theStrategy == "RRSFC")
         {
             strategy(RRSFC);
+        }
+        else if (theStrategy == "BISECTION")
+        {
+            strategy(BISECTION);
         }
         else
         {
@@ -480,6 +487,21 @@ DistributionMapping::PutInCache ()
 }
 
 void
+DistributionMapping::BisectionDoIt (int                  nboxes,
+                                    int                  nprocs);
+{
+    for (int i = 0; i < nboxes; ++i)
+    {
+        // copy Sam's bisection method in decompose_level_bisection() from HPGMG
+    }
+
+    //
+    // Set sentinel equal to our processor number.
+    //
+    m_ref->m_pmap[nboxes] = ParallelDescriptor::MyProc();
+}
+
+void
 DistributionMapping::RoundRobinDoIt (int                  nboxes,
                                      int                  nprocs,
                                      std::vector<LIpair>* LIpairV)
@@ -509,6 +531,19 @@ DistributionMapping::RoundRobinDoIt (int                  nboxes,
     // Set sentinel equal to our processor number.
     //
     m_ref->m_pmap[nboxes] = ParallelDescriptor::MyProc();
+}
+
+void
+DistributionMapping::BisectionProcessorMap (int nboxes, int nprocs)
+{
+    BL_ASSERT(nboxes > 0);
+
+    if (m_ref->m_pmap.size() != nboxes + 1)
+    {
+        m_ref->m_pmap.resize(nboxes + 1);
+    }
+
+    BisectionDoIt(nboxes, nprocs);
 }
 
 void
