@@ -1003,7 +1003,11 @@ MGT_Solver::solve(MultiFab* uu[], MultiFab* rh[], const Real& tol, const Real& a
   // Pass in the status flag from here so we can know whehter the 
   //      solver converged
   int status = 0;
-  mgt_solve(tol,abs_tol,&need_grad_phi,&final_resnorm,&status);
+  mgt_solve(tol,abs_tol,&need_grad_phi,&final_resnorm,&status 
+#ifdef BL_USE_MPI
+           ,ParallelDescriptor::CommunicatorComp()
+#endif
+);
 
   if (status != 0) 
      BoxLib::Error("Multigrid did not converge!");
@@ -1064,7 +1068,11 @@ MGT_Solver::solve(MultiFab* uu[], MultiFab* rh[], const Real& tol, const Real& a
   // Pass in the status flag from here so we can know whehter the 
   //      solver converged
   int status = 0;
-  mgt_solve(tol,abs_tol,&need_grad_phi,&final_resnorm,&status);
+  mgt_solve(tol,abs_tol,&need_grad_phi,&final_resnorm,&status
+#ifdef BL_USE_MPI
+           ,ParallelDescriptor::CommunicatorComp()
+#endif
+);
 
   if (status != 0) 
      BoxLib::Error("Multigrid did not converge!");
@@ -1144,7 +1152,11 @@ MGT_Solver::solve(MultiFab* uu[], MultiFab* rh[], const Real& tol, const Real& a
   // Pass in the status flag from here so we can know whehter the 
   //      solver converged
   int status = 0;
-  mgt_solve(tol,abs_tol,&need_grad_phi,&final_resnorm,&status);
+  mgt_solve(tol,abs_tol,&need_grad_phi,&final_resnorm,&status
+#ifdef BL_USE_MPI
+           ,ParallelDescriptor::CommunicatorComp()
+#endif
+);
 
   if (status != 0) 
      BoxLib::Error("Multigrid did not converge!");
@@ -1221,7 +1233,11 @@ MGT_Solver::solve(MultiFab* uu[], MultiFab* rh[], const Real& tol, const Real& a
 	  mgt_set_uu(&lev, &n, sd, slo, shi, lo, hi);
 	}
     }
-  mgt_solve(tol,abs_tol,&need_grad_phi,&final_resnorm,&status);
+  mgt_solve(tol,abs_tol,&need_grad_phi,&final_resnorm,&status
+#ifdef BL_USE_MPI
+           ,ParallelDescriptor::CommunicatorComp()
+#endif
+);
   if (status == 1) return;
 
   int ng = 0;
@@ -1277,7 +1293,11 @@ MGT_Solver::solve(MultiFab* uu[], MultiFab* rh[], const Real& tol, const Real& a
 	}
     }
 
-  mgt_solve(tol,abs_tol,&need_grad_phi,&final_resnorm,&status);
+  mgt_solve(tol,abs_tol,&need_grad_phi,&final_resnorm,&status
+#ifdef BL_USE_MPI
+           ,ParallelDescriptor::CommunicatorComp()
+#endif
+);
   if (status == 1) return;
 
   int ng = 0;

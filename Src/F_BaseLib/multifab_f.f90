@@ -4455,13 +4455,14 @@ contains
     r = multifab_norm_l1_c(mf, 1, mf%nc, all = all)
   end function multifab_norm_l1
 
-  function multifab_sum_c(mf, comp, nc, mask, all) result(r)
+  function multifab_sum_c(mf, comp, nc, mask, all, comm) result(r)
     real(dp_t) :: r
     integer, intent(in) :: comp
     logical, intent(in), optional :: all
     integer, intent(in), optional :: nc
     type(multifab), intent(in) :: mf
     type(lmultifab), intent(in), optional :: mask
+    integer, intent(in), optional :: comm
     real(dp_t), pointer :: mp(:,:,:,:)
     logical, pointer :: lp(:,:,:,:)
     integer :: i, n
@@ -4495,14 +4496,15 @@ contains
           r1 = r1 + sum(mp)
        end do
     end if
-    call parallel_reduce(r, r1, MPI_SUM)
+    call parallel_reduce(r, r1, MPI_SUM, comm = comm)
   end function multifab_sum_c
-  function multifab_sum(mf, mask, all) result(r)
+  function multifab_sum(mf, mask, all, comm) result(r)
     real(dp_t)                            :: r
     type(multifab), intent(in)            :: mf
     type(lmultifab), intent(in), optional :: mask
     logical, intent(in), optional         :: all
-    r = multifab_sum_c(mf, 1, mf%nc, mask, all)
+    integer, intent(in), optional         :: comm
+    r = multifab_sum_c(mf, 1, mf%nc, mask, all, comm = comm)
   end function multifab_sum
 
   function multifab_norm_l2_doit(ap, lp) result(r)

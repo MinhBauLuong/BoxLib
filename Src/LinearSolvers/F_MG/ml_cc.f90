@@ -11,7 +11,7 @@ module ml_cc_module
 contains
 
   subroutine ml_cc(mla, mgt, rh, full_soln, fine_mask, &
-                   do_diagnostics, need_grad_phi_in, final_resnorm, status)
+                   do_diagnostics, need_grad_phi_in, final_resnorm, status, compcomm)
 
     use bl_prof_module
     use ml_norm_module          , only : ml_norm_inf
@@ -27,6 +27,7 @@ contains
     integer        , intent(in   ) :: do_diagnostics
 
     logical        , intent(in   ), optional :: need_grad_phi_in
+    integer        , intent(in   ), optional :: compcomm
     real(dp_t)     , intent(  out), optional :: final_resnorm
     integer        , intent(  out), optional :: status
 
@@ -163,7 +164,7 @@ contains
     t1(3) = ml_norm_inf(res,fine_mask,local=.true.)
     t1(4) = ml_norm_inf(rh,fine_mask,local=.true.)
 
-    call parallel_reduce(t2, t1, MPI_MAX)
+    call parallel_reduce(t2, t1, MPI_MAX, comm = compcomm)
 
     call bl_proffortfuncstop("ml_cc:0")
     call bl_proffortfuncstart("ml_cc:1")
@@ -195,7 +196,7 @@ contains
     ! Note we do this before res is copied back into rhs.
     if (nlevs .eq. 1 .and. mgt(1)%bottom_singular .and. mgt(1)%coeffs_sum_to_zero) then
 
-       sum = multifab_sum(res(1))  / boxarray_dvolume(get_boxarray(res(1)))
+       sum = multifab_sum(res(1), comm = compcomm)  / boxarray_dvolume(get_boxarray(res(1)))
 
        ! Subtract "sum" from res(1) in order to make this solvable
        call sub_sub(res(1), sum)
@@ -236,7 +237,7 @@ contains
     ! Set flag "optimistically", 0 indicates no problems (1: smoother failed, <0: too many mlmg iterations)
     if ( present(status) ) status = 0
 
-    if ( ml_converged(res, fine_mask, max_norm, mgt(nlevs)%eps, mgt(nlevs)%abs_eps, ni_res, mgt(nlevs)%verbose) ) then
+    if ( ml_converged(res, fine_mask, max_norm, mgt(nlevs)%eps, mgt(nlevs)%abs_eps, ni_res, mgt(nlevs)%verbose, comm=compcomm) ) then
 
        solved = .true.
 
@@ -267,7 +268,7 @@ contains
 
           if ( fine_converged ) then
              if ( ml_converged(res, fine_mask, max_norm, mgt(nlevs)%eps, &
-                  mgt(nlevs)%abs_eps, ni_res, mgt(nlevs)%verbose) ) then
+                  mgt(nlevs)%abs_eps, ni_res, mgt(nlevs)%verbose, comm=compcomm) ) then
 
                 ! Subtract one from "iter" here because we have already converged
                 iter_solved = iter-1
@@ -301,7 +302,7 @@ contains
              ! Enforce solvability if appropriate
              if (n .eq. 1 .and. mgt(1)%bottom_singular .and. mgt(1)%coeffs_sum_to_zero) then
 
-                sum = multifab_sum(res(1))  / boxarray_dvolume(get_boxarray(res(1)))
+                sum = multifab_sum(res(1), comm=compcomm)  / boxarray_dvolume(get_boxarray(res(1)))
 
                 ! Subtract "sum" from res(1) in order to make this solvable
                 call sub_sub(res(1), sum)
@@ -332,26 +333,30 @@ contains
                         call mg_tower_cycle(mgt(n), MG_FCycle, mglev, &
                              mgt(n)%ss(mglev), uu(n), res(n), &
                              mgt(n)%mm(mglev), mgt(n)%nu1, mgt(n)%nu2, &
-                             bottom_solve_time = bottom_solve_time)
+                             bottom_solve_time = bottom_solve_time, &
+                             comm = compcomm)
                     else
                         mgt(1)%use_lininterp = .false.
                         call mg_tower_cycle(mgt(n), MG_VCycle, mglev, &
                              mgt(n)%ss(mglev), uu(n), res(n), &
                              mgt(n)%mm(mglev), mgt(n)%nu1, mgt(n)%nu2, &
-                             bottom_solve_time = bottom_solve_time)
+                             bottom_solve_time = bottom_solve_time, &
+                             comm = compcomm)
                     end if
                 else if (mgt(n)%cycle_type == MG_VCycle) then
                     mgt(1)%use_lininterp = .false.
                     call mg_tower_cycle(mgt(n), mgt(n)%cycle_type, mglev, &
                          mgt(n)%ss(mglev), uu(n), res(n), &
                          mgt(n)%mm(mglev), mgt(n)%nu1, mgt(n)%nu2, &
-                         bottom_solve_time = bottom_solve_time)
+                         bottom_solve_time = bottom_solve_time, &
+                         comm = compcomm)
                 else if (mgt(n)%cycle_type == MG_FCycle) then
                     mgt(1)%use_lininterp = .true.
                     call mg_tower_cycle(mgt(n), mgt(n)%cycle_type, mglev, &
                          mgt(n)%ss(mglev), uu(n), res(n), &
                          mgt(n)%mm(mglev), mgt(n)%nu1, mgt(n)%nu2, &
-                         bottom_solve_time = bottom_solve_time)
+                         bottom_solve_time = bottom_solve_time, &
+                         comm = compcomm)
                 end if
              end if
              call bl_proffortfuncstop("ml_cc:Relax")
@@ -519,7 +524,7 @@ contains
           call compute_defect(mgt(n)%ss(mglev),res(n),rh(n),full_soln(n), &
                          mgt(n)%mm(mglev), mgt(n)%stencil_type, mgt(n)%lcross, filled=.true.)
 
-          if ( ml_fine_converged(res, max_norm, mgt(nlevs)%eps, mgt(nlevs)%abs_eps) ) then
+          if ( ml_fine_converged(res, max_norm, mgt(nlevs)%eps, mgt(nlevs)%abs_eps, comm=compcomm) ) then
 
              fine_converged = .true.
 
@@ -687,7 +692,7 @@ contains
     if (solved) then
        if ( present(final_resnorm) ) final_resnorm = ni_res
        r2 = (parallel_wtime() - r1)
-       call parallel_reduce(r1, r2, MPI_MAX, proc = parallel_IOProcessorNode())
+       call parallel_reduce(r1, r2, MPI_MAX, proc = parallel_IOProcessorNode(), comm=compcomm)
        if ( parallel_IOProcessor() .and. mgt(nlevs)%verbose > 0 ) &
             print*, 'Solve Time = ', r1
     end if
@@ -697,18 +702,19 @@ contains
 
   contains
 
-    function ml_fine_converged(res, max_norm, rel_eps, abs_eps) result(r)
+    function ml_fine_converged(res, max_norm, rel_eps, abs_eps, comm) result(r)
       logical                    :: r
       type(multifab), intent(in) :: res(:)
       real(dp_t),     intent(in) :: rel_eps, abs_eps, max_norm
       real(dp_t)                 :: ni_res
       integer                    :: nlevs
+      integer,        intent(in), optional :: comm
       nlevs = size(res)
-      ni_res = norm_inf(res(nlevs))
+      ni_res = norm_inf(res(nlevs), comm=comm)
       r = ( ni_res <= rel_eps*(max_norm) .or. ni_res <= abs_eps)
     end function ml_fine_converged
 
-    function ml_converged(res, mask, max_norm, rel_eps, abs_eps, ni_res, verbose) result(r)
+    function ml_converged(res, mask, max_norm, rel_eps, abs_eps, ni_res, verbose, comm) result(r)
 
       use ml_norm_module, only : ml_norm_inf
 
@@ -717,10 +723,11 @@ contains
       type(multifab),  intent(in ) :: res(:)
       type(lmultifab), intent(in ) :: mask(:)
       real(dp_t),      intent(in ) :: rel_eps, abs_eps, max_norm
+      integer,         intent(in ), optional :: comm
       real(dp_t),      intent(out) :: ni_res
       real(dp_t) :: l_ni_res
       l_ni_res = ml_norm_inf(res, mask, local=.true.)
-      call parallel_reduce(ni_res, l_ni_res, MPI_MAX) 
+      call parallel_reduce(ni_res, l_ni_res, MPI_MAX, comm=comm) 
       r = ( ni_res <= rel_eps*(max_norm) .or. ni_res <= abs_eps )
       if ( r .and. parallel_IOProcessor() .and. verbose > 1) then
          if ( ni_res <= rel_eps*max_norm ) then

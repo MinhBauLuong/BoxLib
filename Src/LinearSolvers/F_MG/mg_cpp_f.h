@@ -789,7 +789,11 @@ extern "C"
   void mgt_nodal_dealloc();
   
   void mgt_solve(const Real& tol, const Real& abs_tol, const int* need_grad_phi, Real* final_resnorm,
-                 int* status);
+                 int* status
+#ifdef BL_USE_MPI
+                ,const MPI_Comm& comm
+#endif
+);
 
   void mgt_applyop();
   

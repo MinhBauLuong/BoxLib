@@ -762,7 +762,7 @@ contains
 
   end subroutine do_bottom_mgt
 
-  subroutine mg_tower_bottom_solve(mgt, lev, ss, uu, rh, mm, eps_in)
+  subroutine mg_tower_bottom_solve(mgt, lev, ss, uu, rh, mm, eps_in, comm)
 
     use bl_prof_module
     use itsol_module, only: itsol_bicgstab_solve, itsol_cabicgstab_solve, itsol_cg_solve
@@ -774,6 +774,7 @@ contains
     type(imultifab), intent(in) :: mm
     integer, intent(in) :: lev
     real(dp_t), intent(in), optional :: eps_in
+    integer, intent(in), optional :: comm
 
     integer             :: i,stat,communicator
     logical             :: singular_test,do_diag
@@ -831,7 +832,7 @@ contains
                                     stat = stat, &
                                     singular_in = singular_test, &
                                     uniform_dh = mgt%uniform_dh, &
-                                    comm_in = communicator)
+                                    comm_in = comm)
        end if
        do i = 1, mgt%nub
           call mg_tower_smoother(i, mgt, lev, ss, uu, rh, mm)
@@ -1462,7 +1463,7 @@ contains
     r = itsol_converged(dd, Ynorm, mgt%eps, mgt%abs_eps)
   end function mg_tower_converged
 
-  subroutine mg_tower_cycle(mgt,cyc,lev,ss,uu,rh,mm,nu1,nu2,bottom_level,bottom_solve_time)
+  subroutine mg_tower_cycle(mgt,cyc,lev,ss,uu,rh,mm,nu1,nu2,bottom_level,bottom_solve_time,comm)
 
     type(mg_tower), intent(inout) :: mgt
     type(multifab), intent(inout) :: rh
@@ -1474,12 +1475,13 @@ contains
     integer, intent(in) :: cyc
     integer, intent(in), optional :: bottom_level
     real(dp_t), intent(inout), optional :: bottom_solve_time
+    integer, intent(in), optional :: comm
 
     ! Note: this used to depend on mgt%cycle_type, but now we explicitly use the cycle_type
     !       that is passed in in "cyc" so that we can mix the cycle types in a single solve.
     select case ( cyc )
         case(MG_VCycle)
-            call mg_tower_v_cycle(mgt,cyc,lev,ss,uu,rh,mm,nu1,nu2,1,bottom_level,bottom_solve_time)
+            call mg_tower_v_cycle(mgt,cyc,lev,ss,uu,rh,mm,nu1,nu2,1,bottom_level,bottom_solve_time,comm=comm)
         case(MG_WCycle)
             call mg_tower_v_cycle(mgt,cyc,lev,ss,uu,rh,mm,nu1,nu2,2,bottom_level,bottom_solve_time)
         case(MG_FCycle)
@@ -1585,7 +1587,7 @@ contains
   end subroutine mg_tower_fmg_cycle
 
   recursive subroutine mg_tower_v_cycle(mgt, cyc, lev, ss, uu, rh, mm, nu1, nu2, gamma, &
-                                        bottom_level, bottom_solve_time)
+                                        bottom_level, bottom_solve_time, comm)
     use bl_prof_module
 
     type(mg_tower),  intent(inout) :: mgt
@@ -1598,6 +1600,7 @@ contains
     integer,         intent(in   ) :: gamma
     integer,         intent(in   ) :: cyc
     integer,         intent(in   ), optional :: bottom_level
+    integer,         intent(in   ), optional :: comm
     real(dp_t),      intent(inout), optional :: bottom_solve_time
 
     integer    :: i,lbl
@@ -1653,7 +1656,7 @@ contains
           end if
 
        else
-          call mg_tower_bottom_solve(mgt, lev, ss, uu, rh, mm)
+          call mg_tower_bottom_solve(mgt, lev, ss, uu, rh, mm, comm=comm)
        end if
 
        if ( present(bottom_solve_time) ) &
@@ -1691,7 +1694,7 @@ contains
        do i = gamma, 1, -1
           call bl_proffortfuncstop("mg_tower_v_cycle")
           call mg_tower_v_cycle(mgt, cyc, lev-1, mgt%ss(lev-1), mgt%uu(lev-1), &
-                              mgt%dd(lev-1), mgt%mm(lev-1), nu1, nu2, gamma, bottom_level, bottom_solve_time)
+                              mgt%dd(lev-1), mgt%mm(lev-1), nu1, nu2, gamma, bottom_level, bottom_solve_time, comm=comm)
           call bl_proffortfuncstart("mg_tower_v_cycle")
        end do
 
