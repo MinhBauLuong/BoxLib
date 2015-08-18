@@ -826,7 +826,7 @@ Box::isSquare () const
 {
     const IntVect size = this->size();
 #if BL_SPACEDIM==2
-    return (size[0] == size[1])
+    return (size[0] == size[1]);
 #elif BL_SPACEDIM==3
     return (size[0] == size[1] && (size[1] == size[2]));
 #endif
