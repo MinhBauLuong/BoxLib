@@ -185,6 +185,10 @@ ifeq ($(MACHINE), Linux)
   ifeq ($(findstring mira, $(UNAMEN)), mira)
     WHICHLINUX := MIRA
   endif
+  # OLCF's POWER8+Tesla K40m testbed for getting ready for Summit
+  ifeq ($(findstring crest, $(UNAMEN)), crest)
+    WHICHLINUX := CREST
+  endif
 endif
 #
 # Some Lawrencium crap ...

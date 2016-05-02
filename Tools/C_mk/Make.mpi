@@ -470,7 +470,9 @@ ifeq ($(MACHINE), Linux)
                             ifneq ($(findstring ad.unsw.edu.au, $(HOST)), ad.unsw.edu.au)
                               ifneq ($(WHICHLINUX), CORI)
                                 ifneq ($(WHICHLINUX), EDISON)
-                                  BL_MPI_LIBS += -lmpich
+                                  ifneq ($(WHICHLINUX), CREST)
+                                    BL_MPI_LIBS += -lmpich
+                                  endif
                                 endif
                               endif
                             endif
