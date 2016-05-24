@@ -80,10 +80,12 @@ ifeq ($(MACHINE), Linux)
 	ifeq ($(USE_MPI),TRUE)
 	   CC := cc
 	   CXX := CC
+           NVCC := nvcc
 	   FC := ftn
 	   F90 := ftn
 	   fC := ftn
 	endif
+        INCLUDE_LOCATIONS += $(CRAY_CUDATOOLKIT_DIR)/include
     endif
 
     ifeq ($(WHICHLINUX), CHESTER)
@@ -470,7 +472,9 @@ ifeq ($(MACHINE), Linux)
                             ifneq ($(findstring ad.unsw.edu.au, $(HOST)), ad.unsw.edu.au)
                               ifneq ($(WHICHLINUX), CORI)
                                 ifneq ($(WHICHLINUX), EDISON)
-                                  BL_MPI_LIBS += -lmpich
+                                  ifneq ($(WHICHLINUX), CREST)
+                                    BL_MPI_LIBS += -lmpich
+                                  endif
                                 endif
                               endif
                             endif
