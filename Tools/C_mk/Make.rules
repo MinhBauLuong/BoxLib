@@ -57,6 +57,12 @@ $(executable):	$(objForExecs)
 #
 # Rules for libraries.
 #
+# CUDA code
+$(objTempDir)/%.o: %.cu
+	@echo Compiling $*.cu ...
+	@if [ ! -d $(objTempDir) ]; then mkdir -p $(objTempDir); fi
+	$(SILENT) $(NVCC) $(NVLIBFLAGS) $(NVFLAGS) -c $< $(LIB_OUTPUT_OPTION)
+
 $(objTempDir)/%.o: %.cpp
 	@echo Compiling $*.cpp ...
 	@if [ ! -d $(objTempDir) ]; then mkdir -p $(objTempDir); fi
@@ -93,6 +99,11 @@ $(objTempDir)/%.o: %.f
 #
 # Rules for objects.
 #
+$(objEXETempDir)/%.o: %.cu
+	@echo Compiling $*.cu ...
+	@if [ ! -d $(objEXETempDir) ]; then mkdir -p $(objEXETempDir); fi
+	$(SILENT) $(NVCC) $(NVFLAGS) $(CPPFLAGS) -c $(NVEXEFLAGS) $< $(EXE_OUTPUT_OPTION)
+
 $(objEXETempDir)/%.o: %.cpp
 	@echo Compiling $*.cpp ...
 	@if [ ! -d $(objEXETempDir) ]; then mkdir -p $(objEXETempDir); fi
@@ -137,6 +148,13 @@ $(depTempDir)/%.d: %.cpp
 		sed -e '\''s,^[^:]*\/,,'\'' | \
 		sed -e '\''s,$*.o,$(optionsLib)(&) $@,'\'' > $@'
 
+$(depTempDir)/%.d: %.cu
+	@echo Depending $< ...
+	@if [ ! -d $(depTempDir) ]; then mkdir -p $(depTempDir); fi
+	@$(SHELL) -ec '$(MKDEP) $(includes) $< | \
+		sed -e '\''s,^[^:]*\/,,'\'' | \
+		sed -e '\''s,$*.o,$(optionsLib)(&) $@,'\'' > $@'
+
 $(depTempDir)/%.d: %.c
 	@echo Depending $< ...
 	@if [ ! -d $(depTempDir) ]; then mkdir -p $(depTempDir); fi
@@ -175,6 +193,13 @@ $(depTempDir)/%.d: %.f
 # Rules for dependencies in bare object files.
 #
 $(depEXETempDir)/%.d: %.cpp
+	@echo Depending $< ...
+	@if [ ! -d $(depEXETempDir) ]; then mkdir -p $(depEXETempDir); fi
+	@$(SHELL) -ec '$(MKDEP) $(includes) $< | \
+		sed -e '\''s,^[^:]*\/,,'\'' | \
+		sed -e '\''s,$*.o,$(objEXETempDir)/& $@,'\'' > $@'
+
+$(depEXETempDir)/%.d: %.cu
 	@echo Depending $< ...
 	@if [ ! -d $(depEXETempDir) ]; then mkdir -p $(depEXETempDir); fi
 	@$(SHELL) -ec '$(MKDEP) $(includes) $< | \
@@ -260,6 +285,10 @@ endif
 ifdef cEXE_sources
 -include $(cEXE_sources:%.c=$(depEXETempDir)/%.d)
 endif
+ifdef NVEXE_sources
+-include $(NVEXE_sources:%.cu=$(depEXETempDir)/%.d)
+endif
+
 
 endif
 endif

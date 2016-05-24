@@ -80,10 +80,12 @@ ifeq ($(MACHINE), Linux)
 	ifeq ($(USE_MPI),TRUE)
 	   CC := cc
 	   CXX := CC
+           NVCC := nvcc
 	   FC := ftn
 	   F90 := ftn
 	   fC := ftn
 	endif
+        INCLUDE_LOCATIONS += $(CRAY_CUDATOOLKIT_DIR)/include
     endif
 
     ifeq ($(WHICHLINUX), CHESTER)

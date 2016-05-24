@@ -971,6 +971,7 @@ F90SourceFiles	=
 f77SourceFiles	=
 
 objForLibs	=	$(CLIB_sources:%.cpp=%.o)			\
+			$(NVLIB_sources:%.cu=%.o)			\
 			$(FLIB_sources:%.F=%.o)				\
 			$(F90LIB_sources:%.F90=%.o)			\
 			$(cLIB_sources:%.c=%.o)				\
@@ -978,6 +979,7 @@ objForLibs	=	$(CLIB_sources:%.cpp=%.o)			\
 			$(f90LIB_sources:%.f90=%.o)			\
 
 objStandalone	= 	$(CEXE_sources:%.cpp=%.o)			\
+			$(NVEXE_sources:%.cu=%.o)			\
 			$(FEXE_sources:%.F=%.o)				\
 			$(cEXE_sources:%.c=%.o)				\
 			$(fEXE_sources:%.f=%.o)				\
@@ -1071,6 +1073,9 @@ CSRCALL		= $(CEXE_sources) $(CEXE_headers)			\
                   $(CLIB_sources) $(CLIB_headers)                       \
 		  $(T_sources) $(T_headers)
 
+NVSRCALL	= $(NVEXE_sources) $(NVEXE_headers)			\
+                  $(NVLIB_sources) $(NVLIB_headers)
+
 FSRCALL		= $(FEXE_sources) $(FEXE_headers)                       \
                   $(FLIB_sources)$(FLIB_headers)
 
@@ -1086,7 +1091,7 @@ fSRCALL		= $(fEXE_sources) $(fEXE_headers)                       \
 f90SRCALL	= $(f90EXE_sources) $(f90EXE_headers)                   \
                   $(f90LIB_sources) $(f90LIB_headers)
 
-allSources	= $(CSRCALL) $(FSRCALL) $(F90SRCALL) $(cSRCALL) $(fSRCALL) $(f90SRCALL)
+allSources	= $(CSRCALL) $(NVSRCALL) $(FSRCALL) $(F90SRCALL) $(cSRCALL) $(fSRCALL) $(f90SRCALL)
 
 ifndef CLOSELIB
     CLOSELIB   := FALSE
