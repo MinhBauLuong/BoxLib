@@ -189,6 +189,10 @@ ifeq ($(MACHINE), Linux)
   ifeq ($(findstring crest, $(UNAMEN)), crest)
     WHICHLINUX := CREST
   endif
+  # Mike Zingale's machine at Stony Brook
+#  ifeq ($(findstring bender, $(UNAMEN)), bender)
+#    WHICHLINUX := BENDER
+#  endif
 endif
 #
 # Some Lawrencium crap ...
@@ -1188,3 +1192,7 @@ ifeq ($(WHICHLINUX),MIRA)
     CPPFLAGS += -DBL_FORT_USE_LOWERCASE
   endif
 endif
+
+#ifeq ($(WHICHLINUX), BENDER)
+  NVCC := nvcc
+#endif

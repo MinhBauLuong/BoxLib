@@ -7,6 +7,9 @@
 #include <BaseFab.H>
 #include <BArena.H>
 #include <CArena.H>
+#ifdef BL_CUDA
+#include <CUDArena.H>
+#endif
 
 #if !(defined(BL_NO_FORT) || defined(WIN32))
 #include <SPECIALIZE_F.H>
@@ -36,6 +39,8 @@ BoxLib::BF_init::BF_init ()
 
 #if defined(BL_COALESCE_FABS)
         the_arena = new CArena;
+#elif defined(BL_CUDA)
+        the_arena = new CUDArena;
 #else
         the_arena = new BArena;
 #endif

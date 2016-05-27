@@ -111,6 +111,12 @@ ifeq ($(USE_HYPRE), TRUE)
   DEFINES += -DUSEHYPRE
 endif
 
+INCLUDE_LOCATIONS += /usr/local/cuda-7.5/include
+LIBRARY_LOCATIONS += /usr/local/cuda-7.5/lib64
+LIBRARIES += -lcudart
+
+DEFINES += -DBL_CUDA
+
 vpath %.c   : . $(vpathdir)
 vpath %.h   : . $(vpathdir)
 vpath %.cpp : . $(vpathdir)
