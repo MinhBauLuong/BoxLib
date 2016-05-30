@@ -174,6 +174,12 @@ main (int argc, char* argv[])
     old_phi->setVal(0.0);
     new_phi->setVal(0.0);
 
+    double problo[3], probhi[3];
+    for (int i = 0; i < 3; ++i) {
+      problo[i] = geom.ProbLo(i);
+      probhi[i] = geom.ProbHi(i);
+    }
+
     // Initialize phi by calling a Fortran routine.
     // MFIter = MultiFab Iterator
 #ifdef _OPENMP
@@ -187,7 +193,12 @@ main (int argc, char* argv[])
         const int jStride = bx.length(0);
         const int kStride = bx.length(0) * bx.length(1);
 
-        init_phi((*new_phi)[mfi].dataPtr(), bx.loVect(), bx.hiVect(), jStride, kStride, 0);
+        init_phi((*new_phi)[mfi].dataPtr(),
+                  bx.loVect(), bx.hiVect(),
+                  problo, probhi,
+                  jStride, kStride,
+                  0,
+                  dx);
 #else
 	BL_FORT_PROC_CALL(INIT_PHI,init_phi)
 	    (bx.loVect(),bx.hiVect(), 
