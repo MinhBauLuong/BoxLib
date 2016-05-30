@@ -13,6 +13,9 @@
 #include <omp.h>
 #endif
 
+#include <init_phi_3d_call_cuda_kernel.H>
+#include <cuda_runtime.h>
+
 BL_FORT_PROC_DECL(ADVANCE_PHI, advance_phi)
     (const int* lo, const int* hi,
      const BL_FORT_FAB_ARG(phiold),
@@ -180,11 +183,22 @@ main (int argc, char* argv[])
     {
 	const Box& bx = mfi.tilebox();
 
+#ifdef BL_CUDA
+        const int jStride = bx.length(0);
+        const int kStride = bx.length(0) * bx.length(1);
+
+        init_phi((*new_phi)[mfi].dataPtr(), bx.loVect(), bx.hiVect(), jStride, kStride, 0);
+#else
 	BL_FORT_PROC_CALL(INIT_PHI,init_phi)
 	    (bx.loVect(),bx.hiVect(), 
 	     BL_TO_FORTRAN((*new_phi)[mfi]),Ncomp,
 	     dx,geom.ProbLo(),geom.ProbHi());
+#endif
     }
+    cudaDeviceSynchronize();
+
+    std::cout << "HERE IS THE NORM: ";
+    std::cout << new_phi->norm0() << " " << new_phi->norm1() << " " << new_phi->norm2() << std::endl;
 
     // Call the compute_dt routine to return a time step which we will pass to advance
     Real dt = compute_dt(dx[0]);

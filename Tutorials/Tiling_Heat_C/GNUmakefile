@@ -2,15 +2,17 @@
 # If you set BOXLIB_HOME as an environment variable, this line will be ignored
 BOXLIB_HOME ?= ../..
 
-DEBUG     = FALSE
-USE_MPI   = FALSE
-USE_OMP   = TRUE
+DEBUG     = TRUE
+USE_MPI   = TRUE
+USE_OMP   = FALSE
 PROFILE   = FALSE
-COMP      = Intel
-FCOMP     = Intel
+COMP      = gcc
+FCOMP     = gfortran
 DIM       = 3
 PRECISION = DOUBLE
 EBASE     = Heat
+
+BOXLIB_USE_MPI_WRAPPERS=1
 
 include ./Make.package
 include $(BOXLIB_HOME)/Tools/C_mk/Make.defs
@@ -20,6 +22,12 @@ include $(BOXLIB_HOME)/Src/C_BaseLib/Make.package
 INCLUDE_LOCATIONS += $(BOXLIB_HOME)/Src/C_BoundaryLib
 INCLUDE_LOCATIONS += $(BOXLIB_HOME)/Src/C_BaseLib
 INCLUDE_LOCATIONS += $(BOXLIB_HOME)/Src/C_AMRLib
+
+INCLUDE_LOCATIONS += /usr/local/cuda-7.5/include
+LIBRARY_LOCATIONS += /usr/local/cuda-7.5/lib64
+LIBRARIES += -lcudart
+
+DEFINES += -DBL_CUDA
 
 vpathdir += $(BOXLIB_HOME)/Src/C_BoundaryLib
 vpathdir += $(BOXLIB_HOME)/Src/C_BaseLib

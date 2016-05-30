@@ -3,5 +3,7 @@ CEXE_sources += writePlotFile.cpp
 
 CEXE_headers += writePlotFile.H
 
-f90EXE_sources += init_phi_$(DIM)d.f90 
+#f90EXE_sources += init_phi_$(DIM)d.f90 
+NVEXE_sources += init_phi_3d_call_cuda_kernel.cu
+NVEXE_sources += init_phi_cuda_kernel.cu
 f90EXE_sources += advance_$(DIM)d.f90
