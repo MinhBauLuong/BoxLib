@@ -3,7 +3,6 @@
 #define BL_CUDARENA_H
 
 #include <Arena.H>
-#include <BL_CXX11.H>
 
 //
 // A Concrete Class for Dynamic Memory Management
@@ -21,11 +20,11 @@ public:
     // Allocates a dynamic memory arena of size sz.
     // Returns a pointer to this memory.
     //
-    virtual void* alloc (std::size_t sz) BL_OVERRIDE;
+    virtual void* alloc (std::size_t sz);
     //
     // Deletes the arena pointed to by pt.
     //
-    virtual void free (void* pt) BL_OVERRIDE;
+    virtual void free (void* pt);
 };
 
 #endif /*BL_CUDARENA_H*/
