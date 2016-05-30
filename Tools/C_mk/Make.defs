@@ -1195,5 +1195,5 @@ endif
 
 #ifeq ($(WHICHLINUX), BENDER)
   NVCC := nvcc
-  NVFLAGS := -gencode code=sm_35,arch=compute_35
+  NVFLAGS := -arch=sm_35
 #endif

@@ -15,7 +15,11 @@
 #include <BLassert.H>
 #include <Box.H>
 #include <BoxList.H>
+#ifdef BL_CUDA
+#include <CUDArena.H>
+#else
 #include <CArena.H>
+#endif
 #include <Looping.H>
 #include <REAL.H>
 #include <BLProfiler.H>

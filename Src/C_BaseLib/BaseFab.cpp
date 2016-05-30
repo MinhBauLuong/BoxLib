@@ -5,10 +5,11 @@
 #include <cstdlib>
 
 #include <BaseFab.H>
-#include <BArena.H>
-#include <CArena.H>
 #ifdef BL_CUDA
 #include <CUDArena.H>
+#else
+#include <BArena.H>
+#include <CArena.H>
 #endif
 
 #if !(defined(BL_NO_FORT) || defined(WIN32))

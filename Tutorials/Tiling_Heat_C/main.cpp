@@ -195,6 +195,7 @@ main (int argc, char* argv[])
 	     dx,geom.ProbLo(),geom.ProbHi());
 #endif
     }
+
     cudaDeviceSynchronize();
 
     std::cout << "HERE IS THE NORM: ";
