@@ -1,3 +1,5 @@
+#include <cmath>
+
 __global__ void init_phi_kernel(double *fab,
                                 const int lo1, const int lo2, const int lo3,
                                 const int hi1, const int hi2, const int hi3,

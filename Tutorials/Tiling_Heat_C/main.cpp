@@ -185,7 +185,7 @@ main (int argc, char* argv[])
 #ifdef _OPENMP
 #pragma omp parallel
 #endif
-    for ( MFIter mfi(*new_phi,true); mfi.isValid(); ++mfi )
+    for ( MFIter mfi(*new_phi,false); mfi.isValid(); ++mfi )
     {
 	const Box& bx = mfi.tilebox();
 
