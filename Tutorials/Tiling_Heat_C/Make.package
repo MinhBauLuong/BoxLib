@@ -1,7 +1,9 @@
 CEXE_sources += main.cpp
 CEXE_sources += writePlotFile.cpp
+CEXE_sources += query_GPU_device.cpp
 
 CEXE_headers += writePlotFile.H
+CEXE_headers += query_GPU_device.H>
 
 #f90EXE_sources += init_phi_$(DIM)d.f90 
 NVEXE_sources += init_phi_3d_call_cuda_kernel.cu

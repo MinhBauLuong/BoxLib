@@ -14,6 +14,7 @@
 #endif
 
 #include <init_phi_3d_call_cuda_kernel.H>
+#include <query_GPU_device.H>
 #include <cuda_runtime.h>
 
 BL_FORT_PROC_DECL(ADVANCE_PHI, advance_phi)
@@ -122,6 +123,9 @@ main (int argc, char* argv[])
     pp.query("nsteps",nsteps);
 
     pp.query("do_tiling", do_tiling);
+
+    // print NVIDIA GPU device info
+    query_GPU_device();
 
     // Define a single box covering the domain
     IntVect dom_lo(0,0,0);
