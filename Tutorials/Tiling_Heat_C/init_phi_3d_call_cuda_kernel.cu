@@ -35,9 +35,11 @@ void init_phi(double *fab,
   // they are primitive types. Anything more sophisticated (including arrays
   // and pointers to anything) must be managed using the runtime API.
 
-  dim3 threadsPerBlock(4,4,4);
+  // This configuration guarantees that we can operate on exactly a 64^3 box.
+  dim3 threadsPerBlock(8,8,8);
+  dim3 blocksInGrid(8,8,8);
 
-  init_phi_kernel <<< 1, 1 >>> (fab,
+  init_phi_kernel <<< blocksInGrid, threadsPerBlock >>> (fab,
                                 lo1, lo2, lo3,
                                 hi1, hi2, hi3,
                                 problo1, problo2, problo3,
