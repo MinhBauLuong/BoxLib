@@ -5,6 +5,9 @@ void query_GPU_device() {
   int nDevices;
 
   cudaGetDeviceCount(&nDevices);
+
+  std::cout << std::endl;
+  std::cout << "Querying available CUDA devices ... " << std::endl << std::endl;
   for (int i = 0; i < nDevices; i++) {
     cudaDeviceProp prop;
     cudaGetDeviceProperties(&prop, i);
