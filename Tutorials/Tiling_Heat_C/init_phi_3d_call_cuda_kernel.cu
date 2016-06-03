@@ -31,13 +31,11 @@ void init_phi(double *fab,
   const double dx2 = dx[1];
   const double dx3 = dx[2];
 
-  std::cout << problo1 << " " << problo2 << " " << problo3 << std::endl;
-  std::cout << probhi1 << " " << probhi2 << " " << probhi3 << std::endl;
-  std::cout << dx1 << " " << dx2 << " " << dx3 << std::endl;
-
   // CUDA kernels can copy parameters by value to the GPU stack if and only if
   // they are primitive types. Anything more sophisticated (including arrays
   // and pointers to anything) must be managed using the runtime API.
+
+  dim3 threadsPerBlock(4,4,4);
 
   init_phi_kernel <<< 1, 1 >>> (fab,
                                 lo1, lo2, lo3,
