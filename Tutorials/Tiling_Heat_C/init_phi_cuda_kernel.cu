@@ -16,9 +16,9 @@ __global__ void init_phi_kernel(double *fab,
   // Convert CUDA thread indices into indicies of the FAB that each thread will
   // modify. Isn't this beautiful??
 
-  i = lo1 + (blockIdx.x * blockDim.x) + threadIdx.x;
-  j = lo2 + (blockIdx.y * blockDim.y) + threadIdx.y;
-  k = lo3 + (blockIdx.z * blockDim.z) + threadIdx.z;
+  i = (blockIdx.x * blockDim.x) + threadIdx.x;
+  j = (blockIdx.y * blockDim.y) + threadIdx.y;
+  k = (blockIdx.z * blockDim.z) + threadIdx.z;
 
   // WARNING: for now this assumes that the thread block and the FAB have
   // identical dimensions!!
@@ -29,8 +29,7 @@ __global__ void init_phi_kernel(double *fab,
 
   r2 = ((x-0.25)*(x-0.25) + (y-0.25)*(y-0.25) + (z-0.25)*(z-0.25)) * 100.0;
 
-//  ijk_fab = (i+Nghost) + (j+Nghost)*jStride + (k+Nghost)*kStride;
-  ijk_fab = i + j*jStride + k*kStride;
+  ijk_fab = (i+Nghost) + (j+Nghost)*jStride + (k+Nghost)*kStride;
 
   fab[ijk_fab] = 1.0 + std::exp(-r2);
 

@@ -191,7 +191,7 @@ main (int argc, char* argv[])
 #endif
     for ( MFIter mfi(*new_phi,false); mfi.isValid(); ++mfi )
     {
-	const Box& bx = mfi.tilebox();
+	const Box& bx = mfi.fabbox();
 
 #ifdef BL_CUDA
         const int jStride = bx.length(0);
@@ -201,7 +201,7 @@ main (int argc, char* argv[])
                   bx.loVect(), bx.hiVect(),
                   problo, probhi,
                   jStride, kStride,
-                  0,
+                  Nghost,
                   dx);
 #else
 	BL_FORT_PROC_CALL(INIT_PHI,init_phi)
