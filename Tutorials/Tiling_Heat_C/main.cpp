@@ -198,9 +198,28 @@ main (int argc, char* argv[])
 #endif
     for ( MFIter mfi(*new_phi,false); mfi.isValid(); ++mfi )
     {
-	const Box& bx = mfi.fabbox();
 
 #ifdef BL_CUDA
+
+	// Below is a bit of my (BCF) own hack because I get easily confused by
+	// indexing subtleties.
+        //
+	// As I've written the CUDA C kernels, they index into FABs using a
+	// flattened index "ijk" rather than multidimensional notation that we
+	// typically use in Fortran. Furthermore, when I calculate the j- and
+	// k-strides which are necessary to generate the ijk index, they do
+	// *not* include ghost zones. As a result, this CUDA kernel needs the
+	// Box indices which include ghost zones, i.e., a 64^3 Box with 1 layer
+	// of ghost zones will have indices (-1, -1, -1) -> (64, 64, 64) (which
+	// we get from "mfi.fabbox()") instead of (0, 0, 0) -> (63, 63, 63)
+	// (which we get from "mfi.validbox()" or "mfi.tilebox()").
+	//
+	// There is likely a different way to caluclate ijk indexing and stride
+	// lengths which allows one to use "validbox()" indices instead of
+	// "fabbox()", but I haven't figured out what it is.
+
+	const Box& bx = mfi.fabbox();
+
         const int jStride = bx.length(0);
         const int kStride = bx.length(0) * bx.length(1);
 
@@ -211,6 +230,8 @@ main (int argc, char* argv[])
                   Nghost,
                   dx);
 #else
+	const Box& bx = mfi.tilebox();
+
 	BL_FORT_PROC_CALL(INIT_PHI,init_phi)
 	    (bx.loVect(),bx.hiVect(), 
 	     BL_TO_FORTRAN((*new_phi)[mfi]),Ncomp,
