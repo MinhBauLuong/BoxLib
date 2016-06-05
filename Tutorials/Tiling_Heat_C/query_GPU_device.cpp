@@ -1,17 +1,9 @@
 #include <iostream>
 #include <cuda_runtime.h>
 
-void query_GPU_device() {
-  int nDevices;
-
-  cudaGetDeviceCount(&nDevices);
-
-  std::cout << std::endl;
-  std::cout << "Querying available CUDA devices ... " << std::endl << std::endl;
-  for (int i = 0; i < nDevices; i++) {
-    cudaDeviceProp prop;
-    cudaGetDeviceProperties(&prop, i);
-    std::cout << "Device Number: " << i << std::endl;
+void query_GPU_device(cudaDeviceProp &prop, const int device_idx) {
+    cudaGetDeviceProperties(&prop, device_idx);
+    std::cout << "Device Number: " << device_idx << std::endl;
     std::cout << "  Device name: " << prop.name << std::endl;
     std::cout << "  Memory Clock Rate (MHz): " << int(double(prop.memoryClockRate)/1.0e3) << std::endl;
     std::cout << "  Memory Bus Width (bits): " << prop.memoryBusWidth << std::endl;
@@ -27,5 +19,4 @@ void query_GPU_device() {
     std::cout << "  Supports unified address space with host? " << (prop.unifiedAddressing == 0 ? "NO" : "YES") << std::endl;
     std::cout << "  Warp size (threads): " << prop.warpSize << std::endl;
     std::cout << std::endl;
-  }
 }

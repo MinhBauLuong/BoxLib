@@ -125,7 +125,14 @@ main (int argc, char* argv[])
     pp.query("do_tiling", do_tiling);
 
     // print NVIDIA GPU device info
-    query_GPU_device();
+    int nDevices;
+    cudaGetDeviceCount(&nDevices);
+    std::cout << std::endl;
+    std::cout << "Querying available CUDA devices ... " << std::endl << std::endl;
+    cudaDeviceProp prop;
+    for (int i = 0; i < nDevices; i++) {
+      query_GPU_device(prop, i);
+    }
 
     // Define a single box covering the domain
     IntVect dom_lo(0,0,0);
