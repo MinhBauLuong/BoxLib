@@ -20,17 +20,19 @@ __global__ void init_phi_kernel(double *fab,
   j = (blockIdx.y * blockDim.y) + threadIdx.y;
   k = (blockIdx.z * blockDim.z) + threadIdx.z;
 
-  // WARNING: for now this assumes that the thread block and the FAB have
-  // identical dimensions!!
+  if (i >= lo1 && i <= hi1 &&
+      j >= lo2 && j <= hi2 &&
+      k >= lo3 && k <= hi3) {
 
-  x = problo1 + (double(i)+0.5) * dx1;
-  y = problo2 + (double(j)+0.5) * dx2;
-  z = problo3 + (double(k)+0.5) * dx3;
+    x = problo1 + (double(i)+0.5) * dx1;
+    y = problo2 + (double(j)+0.5) * dx2;
+    z = problo3 + (double(k)+0.5) * dx3;
 
-  r2 = ((x-0.25)*(x-0.25) + (y-0.25)*(y-0.25) + (z-0.25)*(z-0.25)) * 100.0;
+    r2 = ((x-0.25)*(x-0.25) + (y-0.25)*(y-0.25) + (z-0.25)*(z-0.25)) * 100.0;
 
-  ijk_fab = (i+Nghost) + (j+Nghost)*jStride + (k+Nghost)*kStride;
+    ijk_fab = (i+Nghost) + (j+Nghost)*jStride + (k+Nghost)*kStride;
 
-  fab[ijk_fab] = 1.0 + std::exp(-r2);
+    fab[ijk_fab] = 1.0 + std::exp(-r2);
+  }
 
 }

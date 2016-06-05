@@ -11,7 +11,6 @@ void init_phi(double *fab,
               const int Nghost,
               const double *dx)
 {
-  std::cout << "(" << lo[0] << ", " << lo[1] << ", " << lo[2] << ") -> (" << hi[0] << ", " << hi[1] << ", " << hi[2] << ") ... ";
 
   const int lo1 = lo[0];
   const int lo2 = lo[1];
@@ -47,6 +46,4 @@ void init_phi(double *fab,
                                 jStride, kStride,
                                 Nghost,
                                 dx1, dx2, dx3);
-
-  std::cout  << "done." << std::endl;
 }
