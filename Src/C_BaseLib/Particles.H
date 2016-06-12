@@ -5796,7 +5796,11 @@ ParticleContainer<N>::Redistribute (bool where_already_called,
             const int grid = pmap_it->first;
             PBox&     pbox = pmap_it->second;
 
-            for (typename PBox::iterator it = pbox.begin(), End = pbox.end(); it != End; )
+            const typename PBox::iterator End = pbox.end();
+#ifdef _OPENMP
+#pragma omp parallel for default(none) shared(pbox,where_already_called,lev_min,theEffectiveFinestLevel,full_where,nGrow,lev,std::cout) private(not_ours)
+#endif
+            for (typename PBox::iterator it = pbox.begin(); it != End; ++it)
             {
                 ParticleType& p = *it;
 
@@ -5826,6 +5830,7 @@ ParticleContainer<N>::Redistribute (bool where_already_called,
                                 }
                             }
                             else
+#pragma omp critical
                             {
                                 std::cout << "Bad Particle: " << p << '\n';
                                 BoxLib::Abort("ParticleContainer<N>::Redistribute(): invalid particle in basic check");
@@ -5874,12 +5879,7 @@ ParticleContainer<N>::Redistribute (bool where_already_called,
                         BL_ASSERT(pbox.front().m_id > 0);
                         std::swap(pbox.front(),p);
                     }
-                    ++it;
                     pbox.pop_front();
-                }
-                else
-                {
-                    ++it;
                 }
             }
         }
