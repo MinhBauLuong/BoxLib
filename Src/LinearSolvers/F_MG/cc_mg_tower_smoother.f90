@@ -39,10 +39,12 @@ contains
     real(kind=dp_t), pointer :: sp(:,:,:,:)
     integer        , pointer :: mp(:,:,:,:)
     integer :: i, n, ng, nn, stat, npts
-    integer :: lo(mgt%dim)
+    integer :: lo(mgt%dim), tlo(mgt%dim), thi(mgt%dim), tsize(mgt%dim)
     type(bl_prof_timer), save :: bpt
     logical :: pmask(mgt%dim), singular_test
     real(kind=dp_t) :: local_eps
+    type(mfiter) :: mfi
+    type(box) :: tilebox
 
     call bl_proffortfuncstart("cc_mg_tower_smoother")
 
@@ -108,10 +110,19 @@ contains
        select case ( mgt%smoother )
           
        case ( MG_SMOOTHER_GS_RB )
+
+          tsize = (/1024, 4, 4/)
           
           do nn = 0, 1
              call fill_boundary(uu, cross = mgt%lcross)
-             do i = 1, nfabs(ff)
+
+             !$omp parallel default(none) private(i,mfi,tilebox,tlo,thi,lo,up,fp,sp,mp,n) shared(tsize,uu,ff,ss,mgt,ng,nn,mm,lev)
+             call mfiter_build(mfi, ff, tiling=.true., tilesize=tsize)
+             do while(next_tile(mfi,i))
+                tilebox = get_tilebox(mfi)
+                tlo = lwb(tilebox)
+                thi = upb(tilebox)
+
                 up => dataptr(uu, i)
                 fp => dataptr(ff, i)
                 sp => dataptr(ss, i)
@@ -126,7 +137,7 @@ contains
                                                     up(:,:,1,n), fp(:,:,1,n), lo, ng, nn)
                       case (3)
                          call gs_rb_smoother_ibc_3d(sp(:,1,1,1), &
-                                                    up(:,:,:,n), fp(:,:,:,n), lo, ng, nn)
+                                                    up(:,:,:,n), fp(:,:,:,n), lo, tlo, thi, ng, nn)
                       end select
                    end do
                 else
@@ -143,12 +154,13 @@ contains
                               mgt%skewed(lev,i))
                       case (3)
                          call gs_rb_smoother_3d(sp(:,:,:,:), up(:,:,:,n), &
-                              fp(:,:,:,n), mp(:,:,:,1), lo, ng, nn, &
+                              fp(:,:,:,n), mp(:,:,:,1), lo, tlo, thi, ng, nn, &
                               mgt%skewed(lev,i))
                       end select
                    end do
                 end if
              end do
+          !$omp end parallel
           end do
           
        case ( MG_SMOOTHER_EFF_RB )
@@ -170,10 +182,10 @@ contains
                       call gs_rb_smoother_ibc_2d(sp(:,1,1,1), &
                                                  up(:,:,1,n), fp(:,:,1,n), lo, ng, 1)
                    case (3)
-                      call gs_rb_smoother_ibc_3d(sp(:,1,1,1), &
-                                                 up(:,:,:,n), fp(:,:,:,n), lo, ng, 0)
-                      call gs_rb_smoother_ibc_3d(sp(:,1,1,1), &
-                                                 up(:,:,:,n), fp(:,:,:,n), lo, ng, 1)
+                     call gs_rb_smoother_ibc_3d(sp(:,1,1,1), &
+                                                up(:,:,:,n), fp(:,:,:,n), lo, tlo, thi, ng, 0)
+                     call gs_rb_smoother_ibc_3d(sp(:,1,1,1), &
+                                                up(:,:,:,n), fp(:,:,:,n), lo, tlo, thi, ng, 1)
                    end select
                 end do
              else
@@ -196,10 +208,10 @@ contains
                            mgt%skewed(lev,i))
                    case (3)
                       call gs_rb_smoother_3d(sp(:,:,:,:), up(:,:,:,n), &
-                           fp(:,:,:,n), mp(:,:,:,1), lo, ng, 0, &
+                           fp(:,:,:,n), mp(:,:,:,1), lo, tlo, thi, ng, 0, &
                            mgt%skewed(lev,i))
                       call gs_rb_smoother_3d(sp(:,:,:,:), up(:,:,:,n), &
-                           fp(:,:,:,n), mp(:,:,:,1), lo, ng, 1, &
+                           fp(:,:,:,n), mp(:,:,:,1), lo, tlo, thi, ng, 1, &
                            mgt%skewed(lev,i))
                    end select
                 end do
