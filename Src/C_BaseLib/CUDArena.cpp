@@ -1,3 +1,5 @@
+#ifdef BL_CUDA
+
 #include <cuda_runtime.h>
 
 #include <CUDArena.H>
@@ -17,3 +19,5 @@ CUDArena::free (void* pt)
     cudaDeviceSynchronize();
     cudaFree(pt);
 }
+
+#endif /* BL_CUDA */

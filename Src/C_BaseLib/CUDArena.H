@@ -2,6 +2,8 @@
 #ifndef BL_CUDARENA_H
 #define BL_CUDARENA_H
 
+#ifdef BL_CUDA
+
 #include <Arena.H>
 
 //
@@ -26,5 +28,7 @@ public:
     //
     virtual void free (void* pt);
 };
+
+#endif /* BL_CUDA */
 
 #endif /*BL_CUDARENA_H*/
