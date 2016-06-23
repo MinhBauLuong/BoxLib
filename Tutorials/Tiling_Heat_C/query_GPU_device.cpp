@@ -1,3 +1,5 @@
+#ifdef BL_CUDA
+
 #include <iostream>
 #include <cuda_runtime.h>
 
@@ -20,3 +22,5 @@ void query_GPU_device(cudaDeviceProp &prop, const int device_idx) {
     std::cout << "  Warp size (threads): " << prop.warpSize << std::endl;
     std::cout << std::endl;
 }
+
+#endif /* BL_CUDA */
