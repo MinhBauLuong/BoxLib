@@ -20,20 +20,25 @@ const FArrayBox& f){
 	const int *lo = bx.loVect();
 	const int *hi = bx.hiVect();
 
-	for (int n = 0; n<nc; n++){
-		for (int k = lo[2]; k <= hi[2]; ++k) {
-			int k2 = 2*k;
-			for (int j = lo[1]; j <= hi[1]; ++j) {
-				int j2 = 2*j;
-				for (int i = lo[0]; i <= hi[0]; ++i) {
-					int i2 = 2*i;
+        RAJA::RangeSegment iBounds(lo[0], hi[0]+1);
+        RAJA::RangeSegment jBounds(lo[1], hi[1]+1);
+        RAJA::RangeSegment kBounds(lo[2], hi[2]+1);
+        RAJA::RangeSegment nBounds(0, nc);
 
-					c(IntVect(i,j,k),n) =  (f(IntVect(i2+1,j2+1,k2),n) + f(IntVect(i2,j2+1,k2),n) + f(IntVect(i2+1,j2,k2),n) + f(IntVect(i2,j2,k2),n))*0.125;
-					c(IntVect(i,j,k),n) += (f(IntVect(i2+1,j2+1,k2+1),n) + f(IntVect(i2,j2+1,k2+1),n) + f(IntVect(i2+1,j2,k2+1),n) + f(IntVect(i2,j2,k2+1),n))*0.125;
-				}
-			}
-		}
-	}
+        // Since we are modifying the FAB "c" inside the loop, we need to do
+        // the lambda capture by reference using [&] rather than [=].
+        RAJA::forallN<RAJA::NestedPolicy<
+          RAJA::ExecList<RAJA::seq_exec, RAJA::seq_exec, RAJA::seq_exec, RAJA::seq_exec>>> (
+            iBounds, jBounds, kBounds, nBounds, [&](int i, int j, int k, int n) {
+
+              int i2 = 2*i;
+              int j2 = 2*j;
+              int k2 = 2*k;
+
+              c(IntVect(i,j,k),n) =  (f(IntVect(i2+1,j2+1,k2),n) + f(IntVect(i2,j2+1,k2),n) + f(IntVect(i2+1,j2,k2),n) + f(IntVect(i2,j2,k2),n))*0.125;
+              c(IntVect(i,j,k),n) += (f(IntVect(i2+1,j2+1,k2+1),n) + f(IntVect(i2,j2+1,k2+1),n) + f(IntVect(i2+1,j2,k2+1),n) + f(IntVect(i2,j2,k2+1),n))*0.125;
+
+	});
 }
 
 
