@@ -6,6 +6,8 @@
 #include <ArrayLim.H>
 #include <iostream>
 
+#include "RAJA/RAJA.hpp"
+
 //ask Brian CONSTANTS
 //MultiGrid.cpp
 
@@ -196,24 +198,29 @@ const Real* h)
 	Real dhy = beta/(h[1]*h[1]);
 	Real dhz = beta/(h[2]*h[2]);
 
-	for (int n = 0; n<nc; n++){
-		for (int k = lo[2]; k <= hi[2]; ++k) {
-			for (int j = lo[1]; j <= hi[1]; ++j) {
-				for (int i = lo[0]; i <= hi[0]; ++i) {
-					y(IntVect(i,j,k),n) = alpha*a(IntVect(i,j,k))*x(IntVect(i,j,k),n)
-										- dhx * (   bX(IntVect(i+1,j,  k  )) * ( x(IntVect(i+1,j,  k),  n) - x(IntVect(i,  j,  k  ),n) )
-												  - bX(IntVect(i,  j,  k  )) * ( x(IntVect(i,  j,  k),  n) - x(IntVect(i-1,j,  k  ),n) ) 
-												)
-										- dhy * (   bY(IntVect(i,  j+1,k  )) * ( x(IntVect(i,  j+1,k),  n) - x(IntVect(i,  j  ,k  ),n) )
-												  - bY(IntVect(i,  j,  k  )) * ( x(IntVect(i,  j,  k),  n) - x(IntVect(i,  j-1,k  ),n) )
-												)
-										- dhz * (   bZ(IntVect(i,  j,  k+1)) * ( x(IntVect(i,  j,  k+1),n) - x(IntVect(i,  j  ,k  ),n) )
-												  - bZ(IntVect(i,  j,  k  )) * ( x(IntVect(i,  j,  k),  n) - x(IntVect(i,  j,  k-1),n) )
-												);
-				}
-			}
-		}
-	}
+        RAJA::RangeSegment iBounds(lo[0], hi[0]+1);
+        RAJA::RangeSegment jBounds(lo[1], hi[1]+1);
+        RAJA::RangeSegment kBounds(lo[2], hi[2]+1);
+        RAJA::RangeSegment nBounds(0, nc);
+
+        // Since we are modifying the FAB "y" inside the loop, we need to do
+        // the lambda capture by reference using [&] rather than [=].
+        RAJA::forallN<RAJA::NestedPolicy<
+          RAJA::ExecList<RAJA::seq_exec, RAJA::seq_exec, RAJA::seq_exec, RAJA::seq_exec>>> (
+            iBounds, jBounds, kBounds, nBounds, [&](int i, int j, int k, int n) {
+
+                y(IntVect(i,j,k),n) = alpha * a(IntVect(i,j,k)) * x(IntVect(i,j,k),n)
+                - dhx * (   bX(IntVect(i+1,j,  k  )) * ( x(IntVect(i+1,j,  k),  n) - x(IntVect(i,  j,  k  ),n) )
+                - bX(IntVect(i,  j,  k  )) * ( x(IntVect(i,  j,  k),  n) - x(IntVect(i-1,j,  k  ),n) )
+                )
+                - dhy * (   bY(IntVect(i,  j+1,k  )) * ( x(IntVect(i,  j+1,k),  n) - x(IntVect(i,  j  ,k  ),n) )
+                - bY(IntVect(i,  j,  k  )) * ( x(IntVect(i,  j,  k),  n) - x(IntVect(i,  j-1,k  ),n) )
+                )
+                - dhz * (   bZ(IntVect(i,  j,  k+1)) * ( x(IntVect(i,  j,  k+1),n) - x(IntVect(i,  j  ,k  ),n) )
+                - bZ(IntVect(i,  j,  k  )) * ( x(IntVect(i,  j,  k),  n) - x(IntVect(i,  j,  k-1),n) )
+                );
+
+        });
 }
 
 //-----------------------------------------------------------------------
