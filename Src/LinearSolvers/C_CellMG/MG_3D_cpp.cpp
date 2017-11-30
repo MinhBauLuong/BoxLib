@@ -320,30 +320,44 @@ const Real* h)
 	Real dhz = beta/(h[2]*h[2]);
 
 	//fill the fluxes:
-	for (int n = 0; n<nc; n++){
-		//x-flux
-		for (int k = xlo[2]; k <= xhi[2]; ++k) {
-			for (int j = xlo[1]; j <= xhi[1]; ++j) {
-				for (int i = xlo[0]; i <= xhi[0]; ++i) {
-					xflux(IntVect(i,j,k),n) = - dhx * bX(IntVect(i,j,k))*( x(IntVect(i,j,k),n) - x(IntVect(i-1,j,k),n) );
-				}
-			}
-		}
-		//y-flux
-		for (int k = ylo[2]; k <= yhi[2]; ++k) {
-			for (int j = ylo[1]; j <= yhi[1]; ++j) {
-				for (int i = ylo[0]; i <= yhi[0]; ++i) {
-					yflux(IntVect(i,j,k),n) = - dhy * bY(IntVect(i,j,k))*( x(IntVect(i,j,k),n) - x(IntVect(i,j-1,k),n) );
-				}
-			}
-		}
-		//z-flux
-		for (int k = zlo[2]; k <= zhi[2]; ++k) {
-			for (int j = zlo[1]; j <= zhi[1]; ++j) {
-				for (int i = zlo[0]; i <= zhi[0]; ++i) {
-					zflux(IntVect(i,j,k),n) = - dhz * bZ(IntVect(i,j,k))*( x(IntVect(i,j,k),n) - x(IntVect(i,j,k-1),n) );
-				}
-			}
-		}
-	}
+
+        RAJA::RangeSegment nBounds(0, nc);
+
+        {
+          RAJA::RangeSegment iBounds(xlo[0], xhi[0]+1);
+          RAJA::RangeSegment jBounds(xlo[1], xhi[1]+1);
+          RAJA::RangeSegment kBounds(xlo[2], xhi[2]+1);
+
+          RAJA::forallN<RAJA::NestedPolicy<
+            RAJA::ExecList<RAJA::seq_exec, RAJA::seq_exec, RAJA::seq_exec, RAJA::seq_exec>>> (
+              iBounds, jBounds, kBounds, nBounds, [&](int i, int j, int k, int n) {
+                xflux(IntVect(i,j,k),n) = - dhx * bX(IntVect(i,j,k))*( x(IntVect(i,j,k),n) - x(IntVect(i-1,j,k),n) );
+          });
+        }
+
+        //y-flux
+        {
+          RAJA::RangeSegment iBounds(ylo[0], yhi[0]+1);
+          RAJA::RangeSegment jBounds(ylo[1], yhi[1]+1);
+          RAJA::RangeSegment kBounds(ylo[2], yhi[2]+1);
+
+          RAJA::forallN<RAJA::NestedPolicy<
+            RAJA::ExecList<RAJA::seq_exec, RAJA::seq_exec, RAJA::seq_exec, RAJA::seq_exec>>> (
+              iBounds, jBounds, kBounds, nBounds, [&](int i, int j, int k, int n) {
+                yflux(IntVect(i,j,k),n) = - dhy * bY(IntVect(i,j,k))*( x(IntVect(i,j,k),n) - x(IntVect(i,j-1,k),n) );
+          });
+        }
+
+        //z-flux
+        {
+          RAJA::RangeSegment iBounds(zlo[0], zhi[0]+1);
+          RAJA::RangeSegment jBounds(zlo[1], zhi[1]+1);
+          RAJA::RangeSegment kBounds(zlo[2], zhi[2]+1);
+
+          RAJA::forallN<RAJA::NestedPolicy<
+            RAJA::ExecList<RAJA::seq_exec, RAJA::seq_exec, RAJA::seq_exec, RAJA::seq_exec>>> (
+              iBounds, jBounds, kBounds, nBounds, [&](int i, int j, int k, int n) {
+                zflux(IntVect(i,j,k),n) = - dhz * bZ(IntVect(i,j,k))*( x(IntVect(i,j,k),n) - x(IntVect(i,j,k-1),n) );
+          });
+        }
 }
