@@ -250,38 +250,36 @@ const FArrayBox& bZ,
 const Real* h)
 {
 
-	//box extends:
-	const int *lo = bx.loVect();
-	const int *hi = bx.hiVect();
-	
-	//some parameters
-	Real dhx = beta/(h[0]*h[0]);
-	Real dhy = beta/(h[1]*h[1]);
-	Real dhz = beta/(h[2]*h[2]);
-	
-	//initialize to zero
-    res = 0.0;
+    //box extends:
+    const int *lo = bx.loVect();
+    const int *hi = bx.hiVect();
 
-	for (int n = 0; n<nc; n++){
-		for (int k = lo[2]; k <= hi[2]; ++k) {
-			for (int j = lo[1]; j <= hi[1]; ++j) {
-				for (int i = lo[0]; i <= hi[0]; ++i) {
-					Real tmpval= std::abs(alpha * a(IntVect(i,j,k))
-								+ dhx * ( bX(IntVect(i+1,j,k)) + bX(IntVect(i,j,k)) )
-								+ dhy * ( bY(IntVect(i,j+1,k)) + bY(IntVect(i,j,k)) )
-								+ dhz * ( bZ(IntVect(i,j,k+1)) + bZ(IntVect(i,j,k)) ));
-					
-					//now add the rest
-					tmpval +=    std::abs( dhx * bX(IntVect(i+1,j,k)) ) + std::abs( dhx * bX(IntVect(i,j,k)) )
-							   + std::abs( dhy * bY(IntVect(i,j+1,k)) ) + std::abs( dhy * bY(IntVect(i,j,k)) )
-							   + std::abs( dhz * bZ(IntVect(i,j,k+1)) ) + std::abs( dhz * bZ(IntVect(i,j,k)) );
-                    
-                    //now, take the max
-                    res = std::max(res,tmpval);
-				}
-			}
-		}
-	}
+    //some parameters
+    Real dhx = beta/(h[0]*h[0]);
+    Real dhy = beta/(h[1]*h[1]);
+    Real dhz = beta/(h[2]*h[2]);
+	
+    RAJA::ReduceMax<RAJA::seq_reduce, double> maxval(0.0);
+
+    RAJA::RangeSegment iBounds(lo[0], hi[0]+1);
+    RAJA::RangeSegment jBounds(lo[1], hi[1]+1);
+    RAJA::RangeSegment kBounds(lo[2], hi[2]+1);
+    RAJA::RangeSegment nBounds(0, nc);
+
+    RAJA::forallN<RAJA::NestedPolicy<
+    RAJA::ExecList<RAJA::seq_exec, RAJA::seq_exec, RAJA::seq_exec, RAJA::seq_exec>>> (
+      iBounds, jBounds, kBounds, nBounds, [&](int i, int j, int k, int n) {
+
+            Real tmpval = std::abs(alpha * a(IntVect(i,j,k))
+                        + dhx * ( bX(IntVect(i+1,j,k)) + bX(IntVect(i,j,k)) )
+                        + dhy * ( bY(IntVect(i,j+1,k)) + bY(IntVect(i,j,k)) )
+                        + dhz * ( bZ(IntVect(i,j,k+1)) + bZ(IntVect(i,j,k)) ))
+                        + std::abs( dhx * bX(IntVect(i+1,j,k)) ) + std::abs( dhx * bX(IntVect(i,j,k)) )
+                        + std::abs( dhy * bY(IntVect(i,j+1,k)) ) + std::abs( dhy * bY(IntVect(i,j,k)) )
+                        + std::abs( dhz * bZ(IntVect(i,j,k+1)) ) + std::abs( dhz * bZ(IntVect(i,j,k)) );
+            maxval.max(tmpval);
+      });
+    res = maxval;
 }
 
 //-----------------------------------------------------------------------
