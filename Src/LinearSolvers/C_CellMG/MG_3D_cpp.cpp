@@ -143,10 +143,15 @@ const Real* h)
 	Real dhy = beta/(h[1]*h[1]);
 	Real dhz = beta/(h[2]*h[2]);
 
-        RAJA::RangeSegment iBounds(lo[0], hi[0]+1);
+        RAJA::StaticIndexSet<RAJA::TypedListSegment<RAJA::Index_type>> iBounds;
+        auto *idx = new RAJA::Index_type((hi[0]-lo[0])/2+1);
+
         RAJA::RangeSegment jBounds(lo[1], hi[1]+1);
         RAJA::RangeSegment kBounds(lo[2], hi[2]+1);
         RAJA::RangeSegment nBounds(0, nc);
+
+        RAJA::StaticIndexSet<RAJA::TypedListSegment<RAJA::Index_type>> colorset;
+
 
 	// This is technically just Gauss-Seidel, not the red-black variation.
 	// The index set for i depends on the values of j and k; I don't know
@@ -156,35 +161,48 @@ const Real* h)
 	// lo[0] or lo[0]+1.
 
         RAJA::forallN<RAJA::NestedPolicy<
-          RAJA::ExecList<RAJA::seq_exec, RAJA::seq_exec, RAJA::seq_exec, RAJA::seq_exec>>> (
-            iBounds, jBounds, kBounds, nBounds, [&](int i, int j, int k, int n) {
+          RAJA::ExecList<RAJA::seq_exec, RAJA::seq_exec, RAJA::seq_exec>>> (
+            jBounds, kBounds, nBounds, [&](int j, int k, int n) {
 
-          //BC terms
-          Real cf0 = ( (i==blo[0]) && (m0(IntVect(blo[0]-1,j,k))>0) ? f0(IntVect(blo[0],j,k)) : 0. );
-          Real cf1 = ( (j==blo[1]) && (m1(IntVect(i,blo[1]-1,k))>0) ? f1(IntVect(i,blo[1],k)) : 0. );
-          Real cf2 = ( (k==blo[2]) && (m2(IntVect(i,j,blo[2]-1))>0) ? f2(IntVect(i,j,blo[2])) : 0. );
-          Real cf3 = ( (i==bhi[0]) && (m3(IntVect(bhi[0]+1,j,k))>0) ? f3(IntVect(bhi[0],j,k)) : 0. );
-          Real cf4 = ( (j==bhi[1]) && (m4(IntVect(i,bhi[1]+1,k))>0) ? f4(IntVect(i,bhi[1],k)) : 0. );
-          Real cf5 = ( (k==bhi[2]) && (m5(IntVect(i,j,bhi[2]+1))>0) ? f5(IntVect(i,j,bhi[2])) : 0. );
+            int count = 0;
+            int ioff = (lo[0] + j + k + rb)%2;
+            for (int i = lo[0] + ioff; i <= hi[0]; i+=2) {
+              idx[count] = i;
+              std::cout << count << " " << " " << idx[count] << std::endl;
+              ++count;
+            }
+            iBounds.push_back(RAJA::ListSegment(idx, count));
 
-          //assign ORA constants
-          double gamma = alpha * a(IntVect(i,j,k))
-                       + dhx * (bX(IntVect(i,j,k)) + bX(IntVect(i+1,j,k)))
-                       + dhy * (bY(IntVect(i,j,k)) + bY(IntVect(i,j+1,k)))
-                       + dhz * (bZ(IntVect(i,j,k)) + bZ(IntVect(i,j,k+1)));
+            RAJA::forall<RAJA::seq_exec> (iBounds, [&](int i) {
 
-          double g_m_d = gamma
-                       - dhx * (bX(IntVect(i,j,k))*cf0 + bX(IntVect(i+1,j,k))*cf3)
-                       - dhy * (bY(IntVect(i,j,k))*cf1 + bY(IntVect(i,j+1,k))*cf4)
-                       - dhz * (bZ(IntVect(i,j,k))*cf2 + bZ(IntVect(i,j,k+1))*cf5);
 
-          double rho =  dhx * (bX(IntVect(i,j,k))*phi(IntVect(i-1,j,k),n) + bX(IntVect(i+1,j,k))*phi(IntVect(i+1,j,k),n))
-                     + dhy * (bY(IntVect(i,j,k))*phi(IntVect(i,j-1,k),n) + bY(IntVect(i,j+1,k))*phi(IntVect(i,j+1,k),n))
-                     + dhz * (bZ(IntVect(i,j,k))*phi(IntVect(i,j,k-1),n) + bZ(IntVect(i,j,k+1))*phi(IntVect(i,j,k+1),n));
+                 //BC terms
+                 Real cf0 = ( (i==blo[0]) && (m0(IntVect(blo[0]-1,j,k))>0) ? f0(IntVect(blo[0],j,k)) : 0. );
+                 Real cf1 = ( (j==blo[1]) && (m1(IntVect(i,blo[1]-1,k))>0) ? f1(IntVect(i,blo[1],k)) : 0. );
+                 Real cf2 = ( (k==blo[2]) && (m2(IntVect(i,j,blo[2]-1))>0) ? f2(IntVect(i,j,blo[2])) : 0. );
+                 Real cf3 = ( (i==bhi[0]) && (m3(IntVect(bhi[0]+1,j,k))>0) ? f3(IntVect(bhi[0],j,k)) : 0. );
+                 Real cf4 = ( (j==bhi[1]) && (m4(IntVect(i,bhi[1]+1,k))>0) ? f4(IntVect(i,bhi[1],k)) : 0. );
+                 Real cf5 = ( (k==bhi[2]) && (m5(IntVect(i,j,bhi[2]+1))>0) ? f5(IntVect(i,j,bhi[2])) : 0. );
 
-          double res = rhs(IntVect(i,j,k),n) - gamma * phi(IntVect(i,j,k),n) + rho;
+                 //assign ORA constants
+                 double gamma = alpha * a(IntVect(i,j,k))
+                              + dhx * (bX(IntVect(i,j,k)) + bX(IntVect(i+1,j,k)))
+                              + dhy * (bY(IntVect(i,j,k)) + bY(IntVect(i,j+1,k)))
+                              + dhz * (bZ(IntVect(i,j,k)) + bZ(IntVect(i,j,k+1)));
 
-          phi(IntVect(i,j,k),n) += omega/g_m_d * res;
+                 double g_m_d = gamma
+                              - dhx * (bX(IntVect(i,j,k))*cf0 + bX(IntVect(i+1,j,k))*cf3)
+                              - dhy * (bY(IntVect(i,j,k))*cf1 + bY(IntVect(i,j+1,k))*cf4)
+                              - dhz * (bZ(IntVect(i,j,k))*cf2 + bZ(IntVect(i,j,k+1))*cf5);
+
+                 double rho =  dhx * (bX(IntVect(i,j,k))*phi(IntVect(i-1,j,k),n) + bX(IntVect(i+1,j,k))*phi(IntVect(i+1,j,k),n))
+                            + dhy * (bY(IntVect(i,j,k))*phi(IntVect(i,j-1,k),n) + bY(IntVect(i,j+1,k))*phi(IntVect(i,j+1,k),n))
+                            + dhz * (bZ(IntVect(i,j,k))*phi(IntVect(i,j,k-1),n) + bZ(IntVect(i,j,k+1))*phi(IntVect(i,j,k+1),n));
+
+                 double res = rhs(IntVect(i,j,k),n) - gamma * phi(IntVect(i,j,k),n) + rho;
+
+                 phi(IntVect(i,j,k),n) += omega/g_m_d * res;
+          });
 
         });
 }
